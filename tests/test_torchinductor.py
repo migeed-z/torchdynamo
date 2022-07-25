@@ -2435,6 +2435,17 @@ class CommonTemplate:
         )
         self.assertEqual(torchinductor.metrics.generated_kernel_count, 0)
 
+    def test_argmax_argmin(self):
+        def fn(x):
+            return (aten.argmax(x), aten.argmin(x))
+
+        self.common(
+            fn,
+            [
+                torch.randn([32, 256]),
+            ],
+        )
+
 
 if HAS_CPU:
 

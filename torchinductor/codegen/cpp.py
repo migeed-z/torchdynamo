@@ -3,6 +3,7 @@ import dataclasses
 import functools
 import multiprocessing
 import textwrap
+from multiprocessing import reduction
 from typing import Dict
 from typing import List
 
@@ -39,9 +40,9 @@ def reduction_init(reduction_type, dtype):
     if reduction_type in ("sum", "any"):
         return 0
     # TODO(jansel): infinity for floats?
-    if reduction_type == "max":
+    if reduction_type == "max" or reduction_type == "argmax":
         return f"std::numeric_limits<{DTYPE_TO_CPP[dtype]}>::min()"
-    if reduction_type == "min":
+    if reduction_type == "min" or reduction_type == "argmin":
         return f"std::numeric_limits<{DTYPE_TO_CPP[dtype]}>::max()"
     assert False, reduction_type
 
@@ -51,6 +52,10 @@ def reduction_combine(reduction_type, var, next_value):
         return f"{var} += {next_value}"
     if reduction_type == "any":
         return f"{var} = {var} || {next_value}"
+    if reduction_type == "max" or reduction_type == "argmax":
+        return f"{var} = std::max({var}, {next_value})"
+    if reduction_type == "min" or reduction_type == "argmin":
+        return f"{var} = std::min({var}, {next_value})"
     return f"{var} = std::{reduction_type}({var}, {next_value})"
 
 
@@ -274,6 +279,7 @@ class CppKernel(Kernel):
         self.stores.writeline(name, line)
 
     def reduction(self, name, dtype, reduction_type, index, value):
+        argmax_or_argmin = (reduction_type == "argmax" or reduction_type == "argmin")
         tmpvar = self.cse.generate(
             self.loads, f"reduction {name} {cexpr(index)}", write=False
         )
@@ -282,12 +288,22 @@ class CppKernel(Kernel):
         self.reduction_prefix.writeline(
             f"{DTYPE_TO_CPP[dtype]} {tmpvar} = {reduction_init(reduction_type, dtype)};"
         )
+        if argmax_or_argmin:
+            self.reduction_prefix.writeline(f"size_t {tmpvar}_index = 0;")
+
         self.stores.writeline(
             None, f"{reduction_combine(reduction_type, tmpvar, value)};"
         )
+        if argmax_or_argmin:
+            # TODO: Need to compute all vars
+            self.stores.writeline(None, f"if ({tmpvar} == {value}) {{ {tmpvar}_index = {self.itervars[-1]}; }}")
+
         if name not in V.graph.removed_buffers:
             var = self.args.output(name)
-            self.reduction_suffix.writeline(name, f"{var}[{cexpr(index)}] = {tmpvar};")
+            if argmax_or_argmin:
+                self.reduction_suffix.writeline(name, f"{var}[{cexpr(index)}] = {tmpvar}_index;")
+            else:
+                self.reduction_suffix.writeline(name, f"{var}[{cexpr(index)}] = {tmpvar};")
         self.cse.store_cache[name] = tmpvar
 
     def set_ranges(self, lengths, reduction_lengths):
@@ -558,7 +574,14 @@ class LoopLevel:
 
     def lines(self):
         if self.reduction_vars:
-            lookup = {"sum": "+", "min": "min", "max": "max", "any": "||"}
+            lookup = {
+                "sum": "+",
+                "min": "min",
+                "max": "max",
+                "argmin": "min",
+                "argmax": "max",
+                "any": "||",
+            }
             reduction = " " + " ".join(
                 f"reduction({lookup[rtype]}:{var})"
                 for var, rtype in self.reduction_vars.items()
