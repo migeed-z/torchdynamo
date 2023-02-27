@@ -10,7 +10,8 @@ from enum import Enum
 from torch.fx.tensor_type import Dyn
 from transformers import *
 
-
+from timeit import default_timer as timer
+from datetime import timedelta
 
 
 
@@ -56,8 +57,11 @@ heuristic2 = [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024
 false_constraints = [False] * 20
 
 
-user_constraints_M2M100Model = [z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2)), s1 > 0,  s2 > 1, s2 < 1024,
-                                        self_weights == tensor_type.tensor2(D(1, 2050), D(1, 1024))])] + \
+
+# user_constraints_M2M100Model = [z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2)), s1 > 0,  s2 > 1, s2 < 1024,
+#                                         self_weights == tensor_type.tensor2(D(1, 2050), D(1, 1024))])] + \
+
+user_constraints_M2M100Model = [z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2)), s1 > 0,  s2 > 1, s2 < 1024])]+ \
                                [z3.And([input_embeds_2 == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
                                         s1 > 0,
                                         s2 > 1,
@@ -93,7 +97,7 @@ user_constraints_blenderbot = [False, False] \
 
 user_constraints_XGLM = [z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2)), s1 > 0,  s2 > 1, s2 < 2000]),
 
-                         False,
+                         True,
 
                          z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2)), s1 > 0,  s2 > 1, s2 < 2000,
                                  self_weights == tensor_type.tensor2(D(1, 2050), D(1, 1024))]),
@@ -122,8 +126,6 @@ user_constraints_XGLM = [z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2)
                          True,
                          True,
                          True]
-
-
 
 
 user_constraints_marian_mt = [z3.And([input_embeds_2 == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
@@ -255,22 +257,56 @@ def run_function(model, user_constraints):
         print(cnts.frame_count)
 
 
+def run_function_xglm():
+        torchdynamo.config.dynamic_shapes = True
+        cnts = torchdynamo.testing.CompileCounter()
+
+
+        with torchdynamo.optimize(cnts, user_constraints=user_constraints_XGLM):
+            m = generate_hf_model(XGLMModel, hidden_layers=1)
+            m.forward(torch.ones([4, 32], dtype=torch.long))
+
+
 
 # 16 / 35
+# start = timer()
 # print('blender bot \n \n')
 # run_function(BlenderbotSmallModel, user_constraints_blenderbot)
-
+# end = timer()
+# print(timedelta(seconds=end-start))
 
 # 18 / 44
+# start = timer()
 # print('marian \n \n')
 # run_function(MarianModel, user_constraints_marian_mt)
-
+# end = timer()
+# print(timedelta(seconds=end-start))
 
 # 18 / 44
 # print('marian MT \n \n')
+# start = timer()
 # run_function(MarianMTModel, user_constraints_marian_mt)
-
+# end = timer()
+# print(timedelta(seconds=end-start))
 
 # 25 / 47
 # print('m2m100 \n \n')
+# start = timer()
 # run_function(M2M100Model, user_constraints_M2M100Model)
+# end = timer()
+# print(timedelta(seconds=end-start))
+
+
+# 4 / 4
+# XGLM takes different parameters so we create a separate funtion for it
+print('XGLM \n \n')
+start = timer()
+run_function_xglm()
+end = timer()
+print(timedelta(seconds=end-start))
+
+
+
+
+
+

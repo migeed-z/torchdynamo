@@ -11,6 +11,7 @@ from enum import Enum
 from torch.fx.tensor_type import Dyn
 from transformers import *
 
+from timeit import default_timer as timer
 
 
 
@@ -64,7 +65,7 @@ user_constraints_M2M100Model = [z3.And([input == tensor_type.tensor2(D(1, s1), D
                                         s1 > 0,
                                         s2 > 1,
                                         s2 < 2000,
-                                        input_embeds_2 == stack_0])] * 8 + [False] * 100 + [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
+                                        input_embeds_2 == stack_0])] * 8 + [False] + [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
                                                                                               s1 > 0,
                                                                                               s2 > 1,
                                                                                               s2 < 2000])] * 9 + [False] +  [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
@@ -225,7 +226,7 @@ user_constraints_marian_mt = [z3.And([input_embeds_2 == tensor_type.tensor3(D(1,
                                       s1 > 0,
                                       s2 > 1,
                                       s2 < 2000,
-                                      input_embeds_2 == stack_0])] * 7 + [False] * 100 + [z3.And([input == tensor_type.tensor3(D(1,s1), D(1, s2), D(1, s3)),
+                                      input_embeds_2 == stack_0])] * 7 + [False] + [z3.And([input == tensor_type.tensor3(D(1,s1), D(1, s2), D(1, s3)),
                                                                                             input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
                                                                                             s1 > 0,
                                                                                             s2 > 1,
@@ -348,13 +349,39 @@ class TorchDynamoUseCases(unittest.TestCase):
         """
 
         class BasicBlock(torch.nn.Module):
+
             def __init__(self):
                 super().__init__()
 
             def forward(self, x: Dyn):
-                y = x.view(100)
-                tmp = y.size()[0]
-                if tmp < 100:
+                if x.view(100).size()[0] < 100:
+                    return torch.dropout(x, p=0.5, train=False)
+                else:
+                    return torch.relu(x)
+        # torchdynamo.config.debug = True
+        torchdynamo.config.dynamic_shapes = True
+        cnts = torchdynamo.testing.CompileCounter()
+
+        with torchdynamo.optimize(cnts):
+            BasicBlock().forward(torch.rand(50, 2))
+
+        self.assertEqual(cnts.frame_count, 1)
+
+
+
+
+    def test_reshape_2(self):
+        """
+        Here, we expect a single graph because
+        we proved that the conditional is always false
+        """
+
+        class BasicBlock(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+
+            def forward(self, x: Dyn):
+                if x.reshape(100).size()[0] < 100:
                     return torch.dropout(x, p=0.5, train=False)
                 else:
                     return torch.relu(x)
@@ -367,6 +394,37 @@ class TorchDynamoUseCases(unittest.TestCase):
             BasicBlock().forward(torch.rand(50, 2))
 
         self.assertEqual(cnts.frame_count, 1)
+
+
+
+
+    def test_conv(self):
+        """
+        Here, we expect a single graph because
+        we proved that the conditional is always false
+        """
+
+        class BasicBlock(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.conv = torch.nn.Conv2d(
+                    in_channels=512, out_channels=512, kernel_size=3)
+
+            def forward(self, x):
+                if self.conv(x).dim() == 4:
+                    return torch.relu(x)
+                else:
+                    return torch.nn.Dropout(x)
+
+        # torchdynamo.config.debug = True
+        torchdynamo.config.dynamic_shapes = True
+        cnts = torchdynamo.testing.CompileCounter()
+
+        with torchdynamo.optimize(cnts):
+            BasicBlock().forward(torch.rand(512, 512, 3, 3))
+
+
+
 
     @skipIfNoZ3
     def test_fake_condition(self):

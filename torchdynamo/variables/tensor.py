@@ -340,14 +340,26 @@ class TensorVariable(VariableTracker):
                     global COUNT
                     COUNT = COUNT+1
 
+                    # print(proxy.node.graph.print_tabular())
+                    # print(proxy.node)
+
                     print("*************************")
                     # print(GraphModule(FakeRootModule(tx.output.nn_modules), proxy.node.graph))
                     # print("Source code line number = ", tx.lineno, tx.inline_user_function_return)
+
+
+                    # added this block to handle undefined constraints
+                    # earlier, the code was:  user_constraints=tx.user_constraints[COUNT]
+                    if tx.user_constraints is None:
+                        user_constraints = []
+                    else:
+                        user_constraints = tx.user_constraints[COUNT]
+
                     positive, negative = evaluate_conditional_with_constraints(
                         FakeRootModule(tx.output.nn_modules),
                         proxy.node.graph,
                         proxy.node,
-                        user_constraints=tx.user_constraints[COUNT]
+                        user_constraints=user_constraints
                     )
 
                     print(positive)
