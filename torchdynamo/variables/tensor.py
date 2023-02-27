@@ -8,15 +8,10 @@ import operator
 from contextlib import contextmanager
 from typing import Dict
 from typing import List
-
 import torch.fx
 import torch.random
-
-from torch.fx import GraphModule
-
 from torchdynamo.utils import FakeRootModule
 from torchdynamo.utils import maybe_condition
-
 from ..utils import fake_tensors_available
 
 if fake_tensors_available:
@@ -347,7 +342,6 @@ class TensorVariable(VariableTracker):
                     # print(GraphModule(FakeRootModule(tx.output.nn_modules), proxy.node.graph))
                     # print("Source code line number = ", tx.lineno, tx.inline_user_function_return)
 
-
                     # added this block to handle undefined constraints
                     # earlier, the code was:  user_constraints=tx.user_constraints[COUNT]
                     if tx.user_constraints is None:
@@ -362,8 +356,11 @@ class TensorVariable(VariableTracker):
                         user_constraints=user_constraints
                     )
 
-                    print(positive)
-                    print(negative)
+                    if positive == z3.sat and negative == z3.unsat:
+                        print(True)
+
+                    if positive == z3.unsat and negative == z3.sat:
+                        print(False)
 
                     num_of_branches += 1
                     print(f'solved branches so far {solved_branches}')
