@@ -57,223 +57,6 @@ COUNT = -1
 num_of_branches = 0
 solved_branches = 0
 
-s1, s2, s3, s4, s5, s6 = z3.Ints('x1 x2 x3 x4 x5 x6')
-input = z3.Const(1, tensor_type)
-input_embeds = z3.Const(3, tensor_type)
-self_weights = z3.Const(3, tensor_type)
-stack_0 = z3.Const(1, tensor_type)
-attention_mask = z3.Const(2, tensor_type)
-input_embeds_2 = z3.Const(2, tensor_type)
-
-dimension_var2 = z3.Int(2)
-
-# try repeating a condition multiple times
-heuristic = [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                     s1 > 0,
-                     s2 > 1,
-                     s2 < 2000])] * 20
-
-
-
-heuristic2 = [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                     s1 > 0,
-                     s2 > 1,
-                     s2 < 2000])] * 10
-
-false_constraints = [False] * 20
-
-
-user_constraints_M2M100Model = [z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2)), s1 > 0,  s2 > 1, s2 < 1024,
-                                       self_weights == tensor_type.tensor2(D(1, 2050), D(1, 1024))])] + \
-                               [z3.And([input_embeds_2 == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                                        s1 > 0,
-                                        s2 > 1,
-                                        s2 < 2000,
-                                        input_embeds_2 == stack_0])] * 8 + [False] + [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                                                                                              s1 > 0,
-                                                                                              s2 > 1,
-                                                                                              s2 < 2000])] * 9 + [False] +  [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                                                                                                                                     s1 > 0,
-                                                                                                                                     s2 > 1,
-                                                                                                                                     s2 < 2000])] * 9 + [False] * 40
-
-
-
-user_constraints_blenderbot = [False, False] \
-                              +  \
-                              [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, s3)),
-                                       s1 > 0,
-                                       s2 > 1,
-                                       s2 < 2000])] * 9 + [False] + [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, s3)),
-                                                                             s1 > 0,
-                                                                             s2 > 1,
-                                                                             s2 < 2000])] * 12 + [False] * 40
-
-
-bert_user_constraints = [True,
-                         True,
-                         True,
-                         z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                         z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                         z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))])]
-
-
-user_constraint_mt5model = [True,
-                            True,
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            # True,
-                            z3.And([dimension_var2 == 2]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                            z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-
-                            ]
-
-
-T5_model_constraints = [True,
-                        True,
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                        ]
-
-
-bert_user_constraints_2 = [z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                           z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                           z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                           z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                           z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))]),
-                           z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2))])]
-
-
-
-
-user_constraints_XGLM = [z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2)), s1 > 0,  s2 > 1, s2 < 2000]),
-
-                    False,
-
-                    z3.And([input == tensor_type.tensor2(D(1, s1), D(1, s2)), s1 > 0,  s2 > 1, s2 < 2000,
-                            self_weights == tensor_type.tensor2(D(1, 2050), D(1, 1024))]),
-
-
-                    z3.And([input_embeds == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                            s1 > 0,
-                            s2 > 1,
-                            s2 < 2000,
-                            input_embeds == stack_0]),
-
-                    z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                            s1 > 0,
-                            s2 > 1,
-                            s2 < 2000,
-                            input_embeds == stack_0, input_embeds == attention_mask]),
-
-                    z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                            s1 > 0,
-                            s2 > 1,
-                            s2 < 2000]),
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True]
-
-
-
-
-user_constraints_marian = [z3.And([input_embeds_2 == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                                    s1 > 0,
-                                    s2 > 1,
-                                    s2 < 2000,
-                                    input_embeds_2 == stack_0])] * 8 + [False] + [z3.And([input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, s3)),
-                                                                                          input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                                                                                          s1 > 0,
-                                                                                          s2 > 1,
-                                                                                          s2 < 2000])] * 6 + [False] * 40
-
-
-
-user_constraints_marian_mt = [z3.And([input_embeds_2 == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                                 s1 > 0,
-                                 s2 > 1,
-                                 s2 < 2000,
-                                 input_embeds_2 == stack_0])] * 8 + [False] + [z3.And([input == tensor_type.tensor3(D(1,s1), D(1, s2), D(1, s3)),
-                                                                                       input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-                                                                                       s1 > 0,
-                                                                                       s2 > 1,
-                                                                                       s2 < 2000])] * 6 + [False] +\
-                             [z3.And([input == tensor_type.tensor3(D(1,s1), D(1, s2), D(1, s3)),
-         input == tensor_type.tensor3(D(1, s1), D(1, s2), D(1, 1024)),
-         s1 > 0,
-         s2 > 1,
-         s2 < 2000])] * 8 + [False] * 40
-
-
-
 @contextmanager
 def preserve_rng_state():
     rng = torch.clone(torch.random.get_rng_state())
@@ -329,16 +112,16 @@ class TensorVariable(VariableTracker):
         # print("Grad type", tx.gradual_typing)
         try:
             if HAS_Z3:
+                global num_of_branches
+                global solved_branches
+                global COUNT
                 if maybe_condition(proxy.node):
-                    global num_of_branches
-                    global solved_branches
-                    global COUNT
-                    COUNT = COUNT+1
+                    COUNT += 1
 
                     # print(proxy.node.graph.print_tabular())
                     # print(proxy.node)
 
-                    print("*************************")
+                    # print("*************************")
                     # print(GraphModule(FakeRootModule(tx.output.nn_modules), proxy.node.graph))
                     # print("Source code line number = ", tx.lineno, tx.inline_user_function_return)
 
@@ -363,20 +146,20 @@ class TensorVariable(VariableTracker):
                         print(False)
 
                     num_of_branches += 1
-                    print(f'solved branches so far {solved_branches}')
+                    print(f'remaining branches so far {num_of_branches - solved_branches}')
                     print(f'overall branches so far {num_of_branches}')
 
                     if positive == z3.unsat and negative == z3.sat:
                         proxy.tracer.graph.erase_node(proxy.node)
                         solved_branches += 1
-                        print(f'solved branches so far {solved_branches}')
+                        print(f'remaining branches so far {num_of_branches - solved_branches}')
                         print(f'overall branches so far {num_of_branches}')
                         return variables.ConstantVariable(False)
 
                     elif positive == z3.sat and negative == z3.unsat:
                         proxy.tracer.graph.erase_node(proxy.node)
                         solved_branches += 1
-                        print(f'solved branches so far {solved_branches}')
+                        print(f'remaining branches so far {num_of_branches - solved_branches}')
                         print(f'overall branches so far {num_of_branches}')
                         return variables.ConstantVariable(True)
 

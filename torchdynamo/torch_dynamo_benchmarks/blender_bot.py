@@ -4,7 +4,7 @@ import torchdynamo.testing
 from transformers import *
 from timeit import default_timer as timer
 from datetime import timedelta
-from torchdynamo.helper_functions import  run_function, run_function_xglm
+from torchdynamo.helper_functions import run_function
 from torchdynamo.user_constraints import *
 
 # 16 / 35
